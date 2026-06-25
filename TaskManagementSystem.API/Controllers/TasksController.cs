@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using TaskManagementSystem.Core.Exceptions;
 using TaskManagementSystem.Services.DTOs.Task;
 using TaskManagementSystem.Services.Interfaces;
 
@@ -35,6 +36,10 @@ namespace TaskManagementSystem.API.Controllers
                 var userId = GetCurrentUserId();
                 var task = await _taskService.CreateTaskAsync(userId, request);
                 return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, task);
+            }
+            catch (ConflictException ex)
+            {
+                return Conflict(new { message = ex.Message });
             }
             catch (UnauthorizedAccessException ex)
             {

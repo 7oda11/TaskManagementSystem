@@ -2,6 +2,7 @@ using TaskManagementSystem.Core.Aggregates;
 using TaskManagementSystem.Core.Interfaces;
 using TaskManagementSystem.Services.DTOs.Task;
 using TaskManagementSystem.Services.Interfaces;
+using TaskManagementSystem.Core.Exceptions;
 
 namespace TaskManagementSystem.Services.Services
 {
@@ -26,6 +27,17 @@ namespace TaskManagementSystem.Services.Services
             var user = await userRepo.GetByConditionAsync(u => u.ID == userId && !u.IsDeleted);
             if (user == null)
                 throw new KeyNotFoundException("User not found.");
+
+            // Prevent duplicate tasks: same title, same user, same calendar day
+            var today = DateTime.UtcNow.Date;
+            var duplicate = await taskRepo.ExistsAsync(t =>
+                t.UserId == userId &&
+                t.Title == request.Title &&
+                t.CreatedAT.Date == today &&
+                !t.IsDeleted);
+
+            if (duplicate)
+                throw new ConflictException($"A task with the title '{request.Title}' already exists for today.");
 
             var task = new TaskItem
             {
@@ -72,7 +84,11 @@ namespace TaskManagementSystem.Services.Services
         public async Task<IEnumerable<TaskItemDto>> GetAllTasksAsync(int userId)
         {
             var taskRepo = _unitOfWork.Repository<TaskItem>();
-            var tasks = await taskRepo.GetAllByConditionAsync(t => t.UserId == userId && !t.IsDeleted);
+
+            // Sort: highest priority first, then oldest creation date first
+            var tasks = await taskRepo.GetAllWithOptionsAsync(
+                predicate: t => t.UserId == userId && !t.IsDeleted,
+                orderBy: q => q.OrderByDescending(t => t.Priority).ThenBy(t => t.CreatedAT));
 
             return tasks.Select(MapToDto);
         }
