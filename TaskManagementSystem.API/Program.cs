@@ -10,7 +10,7 @@ namespace TaskManagementSystem.API
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -82,6 +82,8 @@ namespace TaskManagementSystem.API
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
+
+            await app.Services.SeedAdminAsync();
 
             app.Run();
         }

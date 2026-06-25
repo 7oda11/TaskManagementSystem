@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using TaskManagementSystem.Services.Interfaces;
 using TaskManagementSystem.Services.Services;
 
@@ -10,6 +10,7 @@ namespace TaskManagementSystem.Services.Registeration
             this IServiceCollection services)
         {
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IUserService, UserService>();
 
             return services;
         }
