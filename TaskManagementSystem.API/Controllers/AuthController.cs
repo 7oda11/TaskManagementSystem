@@ -21,30 +21,16 @@ namespace TaskManagementSystem.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterRequestDto request)
         {
-            try
-            {
-                var response = await _authService.RegisterAsync(request);
-                return CreatedAtAction(nameof(GetProfile), response);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new { message = ex.Message });
-            }
+            var response = await _authService.RegisterAsync(request);
+            return CreatedAtAction(nameof(GetProfile), response);
         }
 
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginRequestDto request)
         {
-            try
-            {
-                var response = await _authService.LoginAsync(request);
-                return Ok(response);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
+            var response = await _authService.LoginAsync(request);
+            return Ok(response);
         }
 
         [HttpGet("me")]

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using TaskManagementSystem.Core.Exceptions;
 using TaskManagementSystem.Services.DTOs.Task;
 using TaskManagementSystem.Services.Interfaces;
 
@@ -31,73 +30,37 @@ namespace TaskManagementSystem.API.Controllers
         [HttpPost]
         public async Task<ActionResult<TaskItemDto>> CreateTask([FromBody] CreateTaskDto request)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                var task = await _taskService.CreateTaskAsync(userId, request);
-                return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, task);
-            }
-            catch (ConflictException ex)
-            {
-                return Conflict(new { message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
+            var userId = GetCurrentUserId();
+            var task = await _taskService.CreateTaskAsync(userId, request);
+            return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, task);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<TaskItemDto>> GetTaskById(int id)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                var task = await _taskService.GetTaskByIdAsync(id, userId);
+            var userId = GetCurrentUserId();
+            var task = await _taskService.GetTaskByIdAsync(id, userId);
 
-                if (task == null)
-                    return NotFound(new { message = "Task not found." });
+            if (task == null)
+                return NotFound(new { message = "Task not found." });
 
-                return Ok(task);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
+            return Ok(task);
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TaskItemDto>>> GetAllTasks()
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                var tasks = await _taskService.GetAllTasksAsync(userId);
-                return Ok(tasks);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
+            var userId = GetCurrentUserId();
+            var tasks = await _taskService.GetAllTasksAsync(userId);
+            return Ok(tasks);
         }
 
         [HttpPatch("{id}/status")]
         public async Task<ActionResult> UpdateTaskStatus(int id, [FromBody] UpdateTaskStatusDto request)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                await _taskService.UpdateTaskStatusAsync(id, userId, request);
-                return NoContent();
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
+            var userId = GetCurrentUserId();
+            await _taskService.UpdateTaskStatusAsync(id, userId, request);
+            return NoContent();
         }
     }
 }

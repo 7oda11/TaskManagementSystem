@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Serilog;
 using System.Text;
+using TaskManagementSystem.API.Middleware;
 using TaskManagementSystem.Infrastructure.Auth;
 using TaskManagementSystem.Infrastructure.Registeration;
 using TaskManagementSystem.Services.Registeration;
@@ -13,6 +15,9 @@ namespace TaskManagementSystem.API
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Host.UseSerilog((context, configuration) =>
+                configuration.ReadFrom.Configuration(context.Configuration));
 
             builder.Services.AddServices();
             builder.Services.AddInfrastructure(builder.Configuration);
@@ -78,12 +83,15 @@ namespace TaskManagementSystem.API
                 app.UseSwaggerUI();
             }
 
+            app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
 
             await app.Services.SeedAdminAsync();
+
+            app.UseSerilogRequestLogging(); // Added request logging middleware
 
             app.Run();
         }

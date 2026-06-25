@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TaskManagementSystem.Core.Aggregates;
 using TaskManagementSystem.Core.Enums;
 using TaskManagementSystem.Core.Interfaces;
@@ -11,23 +12,30 @@ namespace TaskManagementSystem.Services.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
+        private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             IUnitOfWork unitOfWork,
             IPasswordHasher passwordHasher,
-            ITokenService tokenService)
+            ITokenService tokenService,
+            ILogger<AuthService> logger)
         {
             _unitOfWork = unitOfWork;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
+            _logger = logger;
         }
 
         public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
         {
+            _logger.LogInformation("Attempting to register new user with email: {Email}", request.Email);
             var userRepo = _unitOfWork.Repository<User>();
 
             if (await userRepo.ExistsAsync(u => u.Email == request.Email && !u.IsDeleted))
+            {
+                _logger.LogWarning("Registration failed. User with email {Email} already exists.", request.Email);
                 throw new InvalidOperationException("A user with this email already exists.");
+            }
 
             var user = new User
             {
@@ -44,28 +52,39 @@ namespace TaskManagementSystem.Services.Services
             await userRepo.AddAsync(user);
             await _unitOfWork.SaveChangesAsync();
 
+            _logger.LogInformation("Successfully registered user with ID: {UserId}", user.ID);
+
             return BuildAuthResponse(user);
         }
 
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
+            _logger.LogInformation("Login attempt for email: {Email}", request.Email);
             var userRepo = _unitOfWork.Repository<User>();
             var user = await userRepo.GetByConditionAsync(
                 u => u.Email == request.Email.ToLowerInvariant() && !u.IsDeleted);
 
             if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
+            {
+                _logger.LogWarning("Login failed for email: {Email}. Invalid credentials.", request.Email);
                 throw new UnauthorizedAccessException("Invalid email or password.");
+            }
 
+            _logger.LogInformation("User logged in successfully: {UserId}", user.ID);
             return BuildAuthResponse(user);
         }
 
         public async Task<UserProfileDto?> GetCurrentUserAsync(int userId)
         {
+            _logger.LogInformation("Retrieving current user profile for ID: {UserId}", userId);
             var userRepo = _unitOfWork.Repository<User>();
             var user = await userRepo.GetByConditionAsync(u => u.ID == userId && !u.IsDeleted);
 
             if (user is null)
+            {
+                _logger.LogWarning("User profile retrieval failed. ID: {UserId} not found.", userId);
                 return null;
+            }
 
             return MapToProfile(user);
         }
