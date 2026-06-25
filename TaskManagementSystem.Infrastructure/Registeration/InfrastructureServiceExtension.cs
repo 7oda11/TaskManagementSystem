@@ -6,6 +6,7 @@ using TaskManagementSystem.Infrastructure.Persistance;
 using TaskManagementSystem.Infrastructure.Persistance.Data;
 using Microsoft.EntityFrameworkCore;
 using TaskManagementSystem.Infrastructure.BackgroundTasks;
+using TaskManagementSystem.Infrastructure.Caching;
 
 namespace TaskManagementSystem.Infrastructure.Registeration
 {
@@ -23,6 +24,12 @@ namespace TaskManagementSystem.Infrastructure.Registeration
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<ITokenService, JwtTokenService>();
+            services.AddScoped<ICacheService, RedisCacheService>();
+
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = config.GetConnectionString("Redis");
+            });
 
             services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             services.AddHostedService<TaskProcessingBackgroundService>();

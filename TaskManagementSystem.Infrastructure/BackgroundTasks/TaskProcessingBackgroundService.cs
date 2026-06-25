@@ -69,6 +69,10 @@ namespace TaskManagementSystem.Infrastructure.BackgroundTasks
             taskRepo.Update(task);
             await unitOfWork.SaveChangesAsync();
 
+            // Invalidate Cache
+            var cacheService = scope.ServiceProvider.GetRequiredService<ICacheService>();
+            await cacheService.RemoveAsync($"task:{taskId}:user:{task.UserId}");
+
             _logger.LogInformation($"Task ID {taskId} marked as InProgress. Simulating work...");
 
             // Simulate work
@@ -84,6 +88,9 @@ namespace TaskManagementSystem.Infrastructure.BackgroundTasks
                 task.ModifiedBy = "BackgroundWorker";
                 taskRepo.Update(task);
                 await unitOfWork.SaveChangesAsync();
+
+                // Invalidate Cache
+                await cacheService.RemoveAsync($"task:{taskId}:user:{task.UserId}");
 
                 _logger.LogInformation($"Task ID {taskId} marked as Done. Processing complete.");
             }

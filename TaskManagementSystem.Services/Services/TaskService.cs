@@ -9,11 +9,13 @@ namespace TaskManagementSystem.Services.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IBackgroundTaskQueue _taskQueue;
+        private readonly ICacheService _cacheService;
 
-        public TaskService(IUnitOfWork unitOfWork, IBackgroundTaskQueue taskQueue)
+        public TaskService(IUnitOfWork unitOfWork, IBackgroundTaskQueue taskQueue, ICacheService cacheService)
         {
             _unitOfWork = unitOfWork;
             _taskQueue = taskQueue;
+            _cacheService = cacheService;
         }
 
         public async Task<TaskItemDto> CreateTaskAsync(int userId, CreateTaskDto request)
@@ -48,13 +50,23 @@ namespace TaskManagementSystem.Services.Services
 
         public async Task<TaskItemDto?> GetTaskByIdAsync(int taskId, int userId)
         {
+            var cacheKey = $"task:{taskId}:user:{userId}";
+            var cachedTask = await _cacheService.GetAsync<TaskItemDto>(cacheKey);
+            if (cachedTask != null)
+                return cachedTask;
+
             var taskRepo = _unitOfWork.Repository<TaskItem>();
             var task = await taskRepo.GetByConditionAsync(t => t.ID == taskId && t.UserId == userId && !t.IsDeleted);
 
             if (task == null)
                 return null;
 
-            return MapToDto(task);
+            var dto = MapToDto(task);
+
+            // Cache the result for 10 minutes
+            await _cacheService.SetAsync(cacheKey, dto, TimeSpan.FromMinutes(10));
+
+            return dto;
         }
 
         public async Task<IEnumerable<TaskItemDto>> GetAllTasksAsync(int userId)
@@ -80,10 +92,13 @@ namespace TaskManagementSystem.Services.Services
 
             task.Status = request.Status;
             task.ModifiedAt = DateTime.UtcNow;
-            task.ModifiedBy = user.Email.ToString();
+            task.ModifiedBy = userId.ToString();
 
             taskRepo.Update(task);
             await _unitOfWork.SaveChangesAsync();
+
+            // Invalidate cache
+            await _cacheService.RemoveAsync($"task:{taskId}:user:{userId}");
         }
 
         private static TaskItemDto MapToDto(TaskItem task) => new()
