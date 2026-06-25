@@ -83,6 +83,16 @@ namespace TaskManagementSystem.API
             builder.Services.AddAuthorization();
             builder.Services.AddControllers();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
@@ -123,6 +133,7 @@ namespace TaskManagementSystem.API
             app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseHttpsRedirection();
             app.UseRateLimiter();
+            app.UseCors("AllowAll");
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers().RequireRateLimiting("fixed");
