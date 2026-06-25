@@ -1,0 +1,20 @@
+﻿using Microsoft.EntityFrameworkCore;
+using TaskManagementSystem.Core.Aggregates;
+
+namespace TaskManagementSystem.Infrastructure.Persistance.Data
+{
+    public class ApplicationDBContext : DbContext
+    {
+        public ApplicationDBContext(DbContextOptions<ApplicationDBContext> options) : base(options)
+        {
+        }
+
+        public DbSet<User> Users => Set<User>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDBContext).Assembly);
+            base.OnModelCreating(modelBuilder);
+        }
+    }
+}
