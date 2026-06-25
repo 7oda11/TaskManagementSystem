@@ -106,6 +106,10 @@ namespace TaskManagementSystem.API
                 {
                     [new OpenApiSecuritySchemeReference("Bearer", document)] = []
                 });
+
+                var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                options.IncludeXmlComments(xmlPath);
             });
 
             var app = builder.Build();

@@ -30,7 +30,16 @@ namespace TaskManagementSystem.API.Controllers
             throw new UnauthorizedAccessException("Invalid or missing user identity in token.");
         }
 
+        /// <summary>
+        /// Creates a new task for the authenticated user.
+        /// </summary>
+        /// <param name="request">The task details.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The newly created task.</returns>
         [HttpPost]
+        [ProducesResponseType(typeof(ApiResponse<TaskItemDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<ApiResponse<TaskItemDto>>> CreateTask(
             [FromBody] CreateTaskDto request, CancellationToken cancellationToken)
         {
@@ -39,7 +48,16 @@ namespace TaskManagementSystem.API.Controllers
             return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, ApiResponse<TaskItemDto>.Ok(task, "Task created successfully."));
         }
 
+        /// <summary>
+        /// Gets a specific task by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the task to retrieve.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The task details if found.</returns>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<TaskItemDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<TaskItemDto>>> GetTaskById(int id, CancellationToken cancellationToken)
         {
             var userId = GetCurrentUserId();
@@ -51,7 +69,14 @@ namespace TaskManagementSystem.API.Controllers
             return Ok(ApiResponse<TaskItemDto>.Ok(task));
         }
 
+        /// <summary>
+        /// Gets all tasks belonging to the authenticated user.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A list of tasks.</returns>
         [HttpGet]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<TaskItemDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<ApiResponse<IEnumerable<TaskItemDto>>>> GetAllTasks(CancellationToken cancellationToken)
         {
             var userId = GetCurrentUserId();
@@ -59,7 +84,18 @@ namespace TaskManagementSystem.API.Controllers
             return Ok(ApiResponse<IEnumerable<TaskItemDto>>.Ok(tasks));
         }
 
+        /// <summary>
+        /// Updates the status of a specific task.
+        /// </summary>
+        /// <param name="id">The ID of the task to update.</param>
+        /// <param name="request">The new status of the task.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Success response.</returns>
         [HttpPatch("{id}/status")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<object>>> UpdateTaskStatus(
             int id, [FromBody] UpdateTaskStatusDto request, CancellationToken cancellationToken)
         {
