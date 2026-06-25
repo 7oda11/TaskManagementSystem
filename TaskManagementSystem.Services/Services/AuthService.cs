@@ -134,12 +134,11 @@ namespace TaskManagementSystem.Services.Services
         private AuthResponseDto BuildAuthResponse(User user, string refreshToken)
         {
             var token = _tokenService.GenerateToken(user, out var expiresAt);
-            return new AuthResponseDto
-            {
-                Token = token,
-                RefreshToken = refreshToken,
-                ExpiresAt = expiresAt
-            };
+            var response = _mapper.Map<AuthResponseDto>(user);
+            response.Token = token;
+            response.ExpiresAt = expiresAt;
+            // Note: RefreshToken is automatically mapped from User by AutoMapper
+            return response;
         }
     }
 }
