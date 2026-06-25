@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TaskManagementSystem.Core.Aggregates;
 
 namespace TaskManagementSystem.Infrastructure.Persistance.Data
@@ -10,6 +10,7 @@ namespace TaskManagementSystem.Infrastructure.Persistance.Data
         }
 
         public DbSet<User> Users => Set<User>();
+        public DbSet<TaskItem> Tasks => Set<TaskItem>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

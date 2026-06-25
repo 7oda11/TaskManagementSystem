@@ -11,6 +11,7 @@ namespace TaskManagementSystem.Services.Registeration
         {
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<ITaskService, TaskService>();
 
             return services;
         }
