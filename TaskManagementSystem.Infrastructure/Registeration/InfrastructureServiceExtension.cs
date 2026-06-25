@@ -1,10 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TaskManagementSystem.Core.Interfaces;
 using TaskManagementSystem.Infrastructure.Auth;
 using TaskManagementSystem.Infrastructure.Persistance;
 using TaskManagementSystem.Infrastructure.Persistance.Data;
 using Microsoft.EntityFrameworkCore;
+using TaskManagementSystem.Infrastructure.BackgroundTasks;
 
 namespace TaskManagementSystem.Infrastructure.Registeration
 {
@@ -22,6 +23,9 @@ namespace TaskManagementSystem.Infrastructure.Registeration
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<ITokenService, JwtTokenService>();
+
+            services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+            services.AddHostedService<TaskProcessingBackgroundService>();
 
             return services;
         }

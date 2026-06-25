@@ -8,10 +8,12 @@ namespace TaskManagementSystem.Services.Services
     public class TaskService : ITaskService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IBackgroundTaskQueue _taskQueue;
 
-        public TaskService(IUnitOfWork unitOfWork)
+        public TaskService(IUnitOfWork unitOfWork, IBackgroundTaskQueue taskQueue)
         {
             _unitOfWork = unitOfWork;
+            _taskQueue = taskQueue;
         }
 
         public async Task<TaskItemDto> CreateTaskAsync(int userId, CreateTaskDto request)
@@ -37,6 +39,9 @@ namespace TaskManagementSystem.Services.Services
 
             await taskRepo.AddAsync(task);
             await _unitOfWork.SaveChangesAsync();
+
+            // Queue the task for background processing
+            await _taskQueue.QueueTaskAsync(task.ID);
 
             return MapToDto(task);
         }
