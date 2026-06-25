@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Asp.Versioning;
 using TaskManagementSystem.API.Models;
 using TaskManagementSystem.Services.DTOs.Auth;
 using TaskManagementSystem.Services.Interfaces;
@@ -8,7 +9,8 @@ using TaskManagementSystem.Services.Interfaces;
 namespace TaskManagementSystem.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;

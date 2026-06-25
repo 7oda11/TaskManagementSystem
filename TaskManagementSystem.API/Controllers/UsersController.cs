@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Asp.Versioning;
 using TaskManagementSystem.API.Models;
 using TaskManagementSystem.Services.DTOs.Auth;
 using TaskManagementSystem.Services.DTOs.User;
@@ -9,7 +10,8 @@ using TaskManagementSystem.Services.Interfaces;
 namespace TaskManagementSystem.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [Authorize(Roles = "Admin")]
     public class UsersController : ControllerBase
     {

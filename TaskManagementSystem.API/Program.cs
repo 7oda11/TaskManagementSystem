@@ -3,6 +3,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Serilog;
 using System.Text;
+using System.Threading.RateLimiting;
+using Asp.Versioning;
 using TaskManagementSystem.API.Middleware;
 using TaskManagementSystem.Infrastructure.Auth;
 using TaskManagementSystem.Infrastructure.Registeration;
@@ -24,6 +26,34 @@ namespace TaskManagementSystem.API
 
             builder.Services.AddServices();
             builder.Services.AddInfrastructure(builder.Configuration);
+
+            builder.Services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ReportApiVersions = true;
+            })
+            .AddMvc()
+            .AddApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV";
+                options.SubstituteApiVersionInUrl = true;
+            });
+
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddPolicy("fixed", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 100,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = 0
+                        }));
+            });
 
             var jwtSettings = builder.Configuration
                 .GetSection(JwtSettings.SectionName)
@@ -88,9 +118,10 @@ namespace TaskManagementSystem.API
 
             app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseHttpsRedirection();
+            app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.MapControllers();
+            app.MapControllers().RequireRateLimiting("fixed");
 
             await app.Services.SeedAdminAsync();
 
