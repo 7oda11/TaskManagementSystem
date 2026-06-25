@@ -1,6 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using TaskManagementSystem.Core.Interfaces;
 using TaskManagementSystem.Infrastructure.Persistance.Data;
 
@@ -30,8 +27,8 @@ namespace TaskManagementSystem.Infrastructure.Persistance
         }
 
         // ── Save ───────────────────────────────────────────────────
-        public async Task<int> SaveChangesAsync()
-            => await _context.SaveChangesAsync();
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+            => await _context.SaveChangesAsync(cancellationToken);
 
         public void Dispose()
         {

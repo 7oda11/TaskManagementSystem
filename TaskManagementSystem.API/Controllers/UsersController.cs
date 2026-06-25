@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using TaskManagementSystem.API.Models;
 using TaskManagementSystem.Services.DTOs.Auth;
 using TaskManagementSystem.Services.DTOs.User;
 using TaskManagementSystem.Services.Interfaces;
@@ -25,17 +26,18 @@ namespace TaskManagementSystem.API.Controllers
                ?? "Unknown";
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserProfileDto>>> GetAllUsers()
+        public async Task<ActionResult<ApiResponse<IEnumerable<UserProfileDto>>>> GetAllUsers(CancellationToken cancellationToken)
         {
-            var users = await _userService.GetAllUsersAsync();
-            return Ok(users);
+            var users = await _userService.GetAllUsersAsync(cancellationToken);
+            return Ok(ApiResponse<IEnumerable<UserProfileDto>>.Ok(users));
         }
 
         [HttpPost]
-        public async Task<ActionResult<UserProfileDto>> CreateUser([FromBody] CreateUserDto request)
+        public async Task<ActionResult<ApiResponse<UserProfileDto>>> CreateUser(
+            [FromBody] CreateUserDto request, CancellationToken cancellationToken)
         {
-            var user = await _userService.CreateUserAsync(request);
-            return CreatedAtAction(nameof(GetAllUsers), new { id = user.Id }, user);
+            var user = await _userService.CreateUserAsync(request, cancellationToken);
+            return CreatedAtAction(nameof(GetAllUsers), new { id = user.Id }, ApiResponse<UserProfileDto>.Ok(user, "User created successfully."));
         }
 
         /// <summary>
@@ -43,11 +45,11 @@ namespace TaskManagementSystem.API.Controllers
         /// The user row is preserved in the database.
         /// </summary>
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteUser(int id)
+        public async Task<ActionResult<ApiResponse<object>>> DeleteUser(int id, CancellationToken cancellationToken)
         {
             var deletedBy = GetCurrentUserEmail();
-            await _userService.DeleteUserAsync(id, deletedBy);
-            return NoContent();
+            await _userService.DeleteUserAsync(id, deletedBy, cancellationToken);
+            return Ok(ApiResponse<object>.Ok(null!, "User deleted successfully."));
         }
     }
 }

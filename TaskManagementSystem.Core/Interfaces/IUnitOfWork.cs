@@ -1,7 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace TaskManagementSystem.Core.Interfaces
 {
     public interface IUnitOfWork : IDisposable
@@ -10,6 +6,6 @@ namespace TaskManagementSystem.Core.Interfaces
         IRepository<TEntity> Repository<TEntity>() where TEntity : class;
 
         // ── Save ───────────────────────────────────────────────────
-        Task<int> SaveChangesAsync();
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

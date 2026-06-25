@@ -1,8 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
-using System.Text;
 using TaskManagementSystem.Core.Interfaces;
 using TaskManagementSystem.Infrastructure.Persistance.Data;
 
@@ -42,86 +39,87 @@ namespace TaskManagementSystem.Infrastructure.Persistance
 
         // ── Queries ────────────────────────────────────────────────
 
-        public async Task<IEnumerable<TEntity>> GetAllAsync()
-            => await _entity.AsNoTracking().ToListAsync();
+        public async Task<IEnumerable<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
+            => await _entity.AsNoTracking().ToListAsync(cancellationToken);
 
-        public async Task<TEntity?> GetByIdAsync(int id)
+        public async Task<TEntity?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var entity = await _entity.FindAsync(id);
+            var entity = await _entity.FindAsync([id], cancellationToken);
             if (entity == null)
                 throw new Exception($"Entity with id {id} was not found.");
             return entity;
         }
 
-        public async Task<TEntity?> GetByConditionAsync(Expression<Func<TEntity, bool>> predicate)
-            => await _entity.AsNoTracking().FirstOrDefaultAsync(predicate);
+        public async Task<TEntity?> GetByConditionAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+            => await _entity.AsNoTracking().FirstOrDefaultAsync(predicate, cancellationToken);
 
-        public async Task<IEnumerable<TEntity>> GetAllByConditionAsync(Expression<Func<TEntity, bool>> predicate)
-            => await _entity.AsNoTracking().Where(predicate).ToListAsync();
+        public async Task<IEnumerable<TEntity>> GetAllByConditionAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+            => await _entity.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
 
-        public async Task<IEnumerable<TEntity>> GetAllPaginatedAsync(int pageNumber, int pageSize)
+        public async Task<IEnumerable<TEntity>> GetAllPaginatedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
             => await _entity.AsNoTracking()
                    .Skip((pageNumber - 1) * pageSize)
                    .Take(pageSize)
-                   .ToListAsync();
+                   .ToListAsync(cancellationToken);
 
         public async Task<IEnumerable<TEntity>> GetAllPaginatedByConditionAsync(
-            Expression<Func<TEntity, bool>> predicate, int pageNumber, int pageSize)
+            Expression<Func<TEntity, bool>> predicate, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
             => await _entity.AsNoTracking()
                    .Where(predicate)
                    .Skip((pageNumber - 1) * pageSize)
                    .Take(pageSize)
-                   .ToListAsync();
+                   .ToListAsync(cancellationToken);
 
         public async Task<IEnumerable<TEntity>> GetAllWithOptionsAsync(
             Expression<Func<TEntity, bool>>? predicate = null,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+            CancellationToken cancellationToken = default,
             params Expression<Func<TEntity, object>>[] includes)
-            => await BuildQuery(predicate, orderBy, includes).ToListAsync();
+            => await BuildQuery(predicate, orderBy, includes).ToListAsync(cancellationToken);
 
         public async Task<IEnumerable<TEntity>> GetAllWithOptionsPaginatedAsync(
             int pageNumber, int pageSize,
             Expression<Func<TEntity, bool>>? predicate = null,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+            CancellationToken cancellationToken = default,
             params Expression<Func<TEntity, object>>[] includes)
             => await BuildQuery(predicate, orderBy, includes)
                    .Skip((pageNumber - 1) * pageSize)
                    .Take(pageSize)
-                   .ToListAsync();
+                   .ToListAsync(cancellationToken);
 
-        public async Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> predicate)
-            => await _entity.AsNoTracking().AnyAsync(predicate);
+        public async Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+            => await _entity.AsNoTracking().AnyAsync(predicate, cancellationToken);
 
-        public async Task<int> CountAsync()
-            => await _entity.AsNoTracking().CountAsync();
+        public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+            => await _entity.AsNoTracking().CountAsync(cancellationToken);
 
-        public async Task<int> CountByConditionAsync(Expression<Func<TEntity, bool>> predicate)
-            => await _entity.AsNoTracking().CountAsync(predicate);
+        public async Task<int> CountByConditionAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+            => await _entity.AsNoTracking().CountAsync(predicate, cancellationToken);
 
         // ── Commands (only track changes, no SaveChanges) ──────────
 
-        public async Task AddAsync(TEntity entity)
-            => await _entity.AddAsync(entity);   // no SaveChanges ✅
+        public async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
+            => await _entity.AddAsync(entity, cancellationToken);
 
-        public async Task AddRangeAsync(IEnumerable<TEntity> entities)
-            => await _entity.AddRangeAsync(entities);  // no SaveChanges ✅
+        public async Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+            => await _entity.AddRangeAsync(entities, cancellationToken);
 
         public void Update(TEntity entity)
-            => _entity.Update(entity);   // sync, no SaveChanges ✅
+            => _entity.Update(entity);
 
         public void Delete(TEntity entity)
-            => _entity.Remove(entity);   // sync, no SaveChanges ✅
+            => _entity.Remove(entity);
 
-        public async Task DeleteByIdAsync(int id)
+        public async Task DeleteByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var entity = await _entity.FindAsync(id);
+            var entity = await _entity.FindAsync([id], cancellationToken);
             if (entity == null)
                 throw new Exception($"Entity with id {id} was not found.");
-            _entity.Remove(entity);      // no SaveChanges ✅
+            _entity.Remove(entity);
         }
 
         public void DeleteRange(IEnumerable<TEntity> entities)
-            => _entity.RemoveRange(entities);   // sync, no SaveChanges ✅
+            => _entity.RemoveRange(entities);
     }
-
 }

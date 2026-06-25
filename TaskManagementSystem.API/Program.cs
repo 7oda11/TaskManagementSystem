@@ -19,6 +19,9 @@ namespace TaskManagementSystem.API
             builder.Host.UseSerilog((context, configuration) =>
                 configuration.ReadFrom.Configuration(context.Configuration));
 
+            builder.Services.AddAutoMapper(cfg =>
+                cfg.AddProfile<TaskManagementSystem.Services.Mapping.MappingProfile>());
+
             builder.Services.AddServices();
             builder.Services.AddInfrastructure(builder.Configuration);
 

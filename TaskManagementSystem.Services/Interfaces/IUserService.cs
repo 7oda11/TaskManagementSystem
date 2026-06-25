@@ -5,8 +5,8 @@ namespace TaskManagementSystem.Services.Interfaces
 {
     public interface IUserService
     {
-        Task<IEnumerable<UserProfileDto>> GetAllUsersAsync();
-        Task<UserProfileDto> CreateUserAsync(CreateUserDto request);
-        Task DeleteUserAsync(int userId, string deletedBy);
+        Task<IEnumerable<UserProfileDto>> GetAllUsersAsync(CancellationToken cancellationToken = default);
+        Task<UserProfileDto> CreateUserAsync(CreateUserDto request, CancellationToken cancellationToken = default);
+        Task DeleteUserAsync(int userId, string deletedBy, CancellationToken cancellationToken = default);
     }
 }

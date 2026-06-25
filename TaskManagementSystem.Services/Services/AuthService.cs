@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.Extensions.Logging;
 using TaskManagementSystem.Core.Aggregates;
 using TaskManagementSystem.Core.Enums;
@@ -12,26 +13,29 @@ namespace TaskManagementSystem.Services.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
+        private readonly IMapper _mapper;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             IUnitOfWork unitOfWork,
             IPasswordHasher passwordHasher,
             ITokenService tokenService,
+            IMapper mapper,
             ILogger<AuthService> logger)
         {
             _unitOfWork = unitOfWork;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
+            _mapper = mapper;
             _logger = logger;
         }
 
-        public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
+        public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Attempting to register new user with email: {Email}", request.Email);
             var userRepo = _unitOfWork.Repository<User>();
 
-            if (await userRepo.ExistsAsync(u => u.Email == request.Email && !u.IsDeleted))
+            if (await userRepo.ExistsAsync(u => u.Email == request.Email && !u.IsDeleted, cancellationToken))
             {
                 _logger.LogWarning("Registration failed. User with email {Email} already exists.", request.Email);
                 throw new InvalidOperationException("A user with this email already exists.");
@@ -49,20 +53,20 @@ namespace TaskManagementSystem.Services.Services
                 DeletedBy = string.Empty
             };
 
-            await userRepo.AddAsync(user);
-            await _unitOfWork.SaveChangesAsync();
+            await userRepo.AddAsync(user, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Successfully registered user with ID: {UserId}", user.ID);
 
             return BuildAuthResponse(user);
         }
 
-        public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
+        public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Login attempt for email: {Email}", request.Email);
             var userRepo = _unitOfWork.Repository<User>();
             var user = await userRepo.GetByConditionAsync(
-                u => u.Email == request.Email.ToLowerInvariant() && !u.IsDeleted);
+                u => u.Email == request.Email.ToLowerInvariant() && !u.IsDeleted, cancellationToken);
 
             if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
             {
@@ -74,11 +78,11 @@ namespace TaskManagementSystem.Services.Services
             return BuildAuthResponse(user);
         }
 
-        public async Task<UserProfileDto?> GetCurrentUserAsync(int userId)
+        public async Task<UserProfileDto?> GetCurrentUserAsync(int userId, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Retrieving current user profile for ID: {UserId}", userId);
             var userRepo = _unitOfWork.Repository<User>();
-            var user = await userRepo.GetByConditionAsync(u => u.ID == userId && !u.IsDeleted);
+            var user = await userRepo.GetByConditionAsync(u => u.ID == userId && !u.IsDeleted, cancellationToken);
 
             if (user is null)
             {
@@ -86,7 +90,7 @@ namespace TaskManagementSystem.Services.Services
                 return null;
             }
 
-            return MapToProfile(user);
+            return _mapper.Map<UserProfileDto>(user);
         }
 
         private AuthResponseDto BuildAuthResponse(User user)
@@ -98,14 +102,5 @@ namespace TaskManagementSystem.Services.Services
                 ExpiresAt = expiresAt
             };
         }
-
-        private static UserProfileDto MapToProfile(User user) => new()
-        {
-            Id = user.ID,
-            Name = user.Name,
-            Email = user.Email,
-            Role = user.Role.ToString(),
-            CreatedAt = user.CreatedAT
-        };
     }
 }
