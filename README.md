@@ -103,3 +103,17 @@ Cross-Origin Resource Sharing (CORS) is enabled globally for all origins.
 | Allowed Headers | Any |
 
 > **Note**: The `AllowAll` policy is suitable for development. For production, restrict origins to your actual client domains (e.g., `https://your-frontend.com`).
+
+## New Feature: Task Filtering & Pagination
+
+- Implemented flexible task retrieval using **Specification** pattern.
+- Added endpoint `GET /api/v1/tasks/filtered` supporting:
+  - Full‑text search on title/description.
+  - Filtering by status, priority, and creation date range.
+  - Sorting by any field (`title`, `status`, `priority`, `createdAt`) in ascending or descending order.
+  - Server‑side pagination with configurable `page` and `pageSize`.
+- Updated `TaskService` to map DTO filters to domain filters and return a `PagedResultDto`.
+- Added `TasksWithFiltersSpecification` and generic repository methods `GetPagedWithSpecAsync`.
+- New DTO `PagedResultDto<T>` and `TaskFilterDto` expose pagination metadata.
+
+This enhances API usability for large task lists and improves performance by retrieving only required data.
