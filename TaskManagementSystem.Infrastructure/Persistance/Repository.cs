@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using TaskManagementSystem.Core.Models;
 using TaskManagementSystem.Core.Interfaces;
 using TaskManagementSystem.Infrastructure.Persistance.Data;
 
@@ -96,6 +97,74 @@ namespace TaskManagementSystem.Infrastructure.Persistance
 
         public async Task<int> CountByConditionAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
             => await _entity.AsNoTracking().CountAsync(predicate, cancellationToken);
+
+        // ── Specification Methods ─────────────────────────────────
+
+        private IQueryable<TEntity> ApplySpecification(ISpecification<TEntity> spec)
+        {
+            var query = _entity.AsNoTracking();
+
+            if (spec.Includes != null)
+            {
+                foreach (var include in spec.Includes)
+                {
+                    query = query.Include(include);
+                }
+            }
+
+            if (spec.Criteria != null)
+            {
+                query = query.Where(spec.Criteria);
+            }
+
+            if (spec.OrderBy != null)
+            {
+                query = query.OrderBy(spec.OrderBy);
+            }
+            else if (spec.OrderByDescending != null)
+            {
+                query = query.OrderByDescending(spec.OrderByDescending);
+            }
+
+            return query;
+        }
+
+        public async Task<TEntity?> GetWithSpecAsync(ISpecification<TEntity> spec, CancellationToken cancellationToken = default)
+        {
+            return await ApplySpecification(spec).FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public async Task<IEnumerable<TEntity>> GetAllWithSpecAsync(ISpecification<TEntity> spec, CancellationToken cancellationToken = default)
+        {
+            return await ApplySpecification(spec).ToListAsync(cancellationToken);
+        }
+
+        public async Task<PagedResult<TEntity>> GetPagedWithSpecAsync(ISpecification<TEntity> spec, CancellationToken cancellationToken = default)
+        {
+            var query = ApplySpecification(spec);
+            
+            var totalRecords = await query.CountAsync(cancellationToken);
+            
+            if (spec.IsPagingEnabled)
+            {
+                query = query.Skip(spec.Skip).Take(spec.Take);
+            }
+
+            var data = await query.ToListAsync(cancellationToken);
+
+            return new PagedResult<TEntity>
+            {
+                Data = data,
+                TotalRecords = totalRecords,
+                Page = spec.IsPagingEnabled && spec.Take > 0 ? (spec.Skip / spec.Take) + 1 : 1,
+                PageSize = spec.IsPagingEnabled ? spec.Take : totalRecords
+            };
+        }
+
+        public async Task<int> CountWithSpecAsync(ISpecification<TEntity> spec, CancellationToken cancellationToken = default)
+        {
+            return await ApplySpecification(spec).CountAsync(cancellationToken);
+        }
 
         // ── Commands (only track changes, no SaveChanges) ──────────
 

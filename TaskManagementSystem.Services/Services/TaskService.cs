@@ -2,9 +2,11 @@ using AutoMapper;
 using Microsoft.Extensions.Logging;
 using TaskManagementSystem.Core.Aggregates;
 using TaskManagementSystem.Core.Interfaces;
+using TaskManagementSystem.Services.DTOs;
 using TaskManagementSystem.Services.DTOs.Task;
 using TaskManagementSystem.Services.Interfaces;
 using TaskManagementSystem.Core.Exceptions;
+using TaskManagementSystem.Core.Specifications;
 
 namespace TaskManagementSystem.Services.Services
 {
@@ -122,6 +124,37 @@ namespace TaskManagementSystem.Services.Services
                 cancellationToken: cancellationToken);
 
             return _mapper.Map<IEnumerable<TaskItemDto>>(tasks);
+        }
+
+        public async Task<PagedResultDto<TaskItemDto>> GetFilteredTasksAsync(int userId, TaskFilterDto filter, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Retrieving filtered tasks for user ID: {UserId}", userId);
+            
+            // Map DTO filter to Domain filter
+            var domainFilter = new Core.Models.TaskFilter
+            {
+                Page = filter.Page,
+                PageSize = filter.PageSize,
+                SortBy = filter.SortBy,
+                SortDirection = filter.SortDirection,
+                SearchTerm = filter.SearchTerm,
+                Status = filter.Status,
+                Priority = filter.Priority,
+                CreatedAtFrom = filter.CreatedAtFrom,
+                CreatedAtTo = filter.CreatedAtTo
+            };
+
+            // Use generic repository with specification to get paginated results
+            var spec = new TasksWithFiltersSpecification(userId, domainFilter);
+            var pagedEntities = await _unitOfWork.Repository<TaskItem>().GetPagedWithSpecAsync(spec, cancellationToken);
+
+            return new PagedResultDto<TaskItemDto>
+            {
+                Data = _mapper.Map<IEnumerable<TaskItemDto>>(pagedEntities.Data),
+                TotalRecords = pagedEntities.TotalRecords,
+                Page = pagedEntities.Page,
+                PageSize = pagedEntities.PageSize
+            };
         }
 
         public async Task UpdateTaskStatusAsync(int taskId, int userId, UpdateTaskStatusDto request, CancellationToken cancellationToken = default)

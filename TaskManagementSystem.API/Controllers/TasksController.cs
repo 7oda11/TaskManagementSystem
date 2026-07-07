@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Asp.Versioning;
 using TaskManagementSystem.API.Models;
+using TaskManagementSystem.Services.DTOs;
 using TaskManagementSystem.Services.DTOs.Task;
 using TaskManagementSystem.Services.Interfaces;
 
@@ -70,18 +71,21 @@ namespace TaskManagementSystem.API.Controllers
         }
 
         /// <summary>
-        /// Gets all tasks belonging to the authenticated user.
+        /// Gets paginated and filtered tasks belonging to the authenticated user.
         /// </summary>
+        /// <param name="filter">The filtering, sorting, and pagination parameters.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A list of tasks.</returns>
+        /// <returns>A paginated list of tasks.</returns>
         [HttpGet]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<TaskItemDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<PagedResultDto<TaskItemDto>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<ApiResponse<IEnumerable<TaskItemDto>>>> GetAllTasks(CancellationToken cancellationToken)
+        public async Task<ActionResult<ApiResponse<PagedResultDto<TaskItemDto>>>> GetAllTasks(
+            [FromQuery] TaskFilterDto filter, 
+            CancellationToken cancellationToken)
         {
             var userId = GetCurrentUserId();
-            var tasks = await _taskService.GetAllTasksAsync(userId, cancellationToken);
-            return Ok(ApiResponse<IEnumerable<TaskItemDto>>.Ok(tasks));
+            var pagedTasks = await _taskService.GetFilteredTasksAsync(userId, filter, cancellationToken);
+            return Ok(ApiResponse<PagedResultDto<TaskItemDto>>.Ok(pagedTasks));
         }
 
         /// <summary>

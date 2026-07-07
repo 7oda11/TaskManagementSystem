@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using TaskManagementSystem.Core.Models;
 
 namespace TaskManagementSystem.Core.Interfaces
 {
@@ -27,6 +28,12 @@ namespace TaskManagementSystem.Core.Interfaces
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
             CancellationToken cancellationToken = default,
             params Expression<Func<TEntity, object>>[] includes);
+
+        // ── Specification Methods ─────────────────────────────────
+        Task<TEntity?> GetWithSpecAsync(ISpecification<TEntity> spec, CancellationToken cancellationToken = default);
+        Task<IEnumerable<TEntity>> GetAllWithSpecAsync(ISpecification<TEntity> spec, CancellationToken cancellationToken = default);
+        Task<PagedResult<TEntity>> GetPagedWithSpecAsync(ISpecification<TEntity> spec, CancellationToken cancellationToken = default);
+        Task<int> CountWithSpecAsync(ISpecification<TEntity> spec, CancellationToken cancellationToken = default);
         Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
         Task<int> CountAsync(CancellationToken cancellationToken = default);
         Task<int> CountByConditionAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
